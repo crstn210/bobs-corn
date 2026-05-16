@@ -1,6 +1,7 @@
 import express from 'express';
 import db from './db.js';
 import { login, logout, authMiddleware } from './auth.js';
+import { buyCorn, RateLimitedError } from './corn.js';
 
 const app = express();
 app.use(express.json());
@@ -27,6 +28,22 @@ app.post('/api/logout', authMiddleware, (req, res) => {
 
 app.get('/api/me', authMiddleware, (req, res) => {
   res.json({ name: req.client.name });
+});
+
+app.post('/api/buy', authMiddleware, (req, res) => {
+  try {
+    const purchase = buyCorn(req.client.id);
+    res.status(201).json({ purchase });
+  } catch (err) {
+    if (err instanceof RateLimitedError) {
+      res.set('Retry-After', String(err.retryAfterSeconds));
+      return res.status(429).json({
+        error: 'Bob sells at most 1 corn per minute per client',
+        retry_after_seconds: err.retryAfterSeconds,
+      });
+    }
+    throw err;
+  }
 });
 
 const PORT = process.env.PORT || 3101;
