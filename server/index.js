@@ -1,10 +1,12 @@
 import express from 'express';
+import db from './db.js';
 
 const app = express();
 app.use(express.json());
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true });
+  const { count } = db.prepare('SELECT COUNT(*) AS count FROM clients').get();
+  res.json({ ok: true, clients: count });
 });
 
 const PORT = process.env.PORT || 3101;

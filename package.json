@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "backbone": "^1.6.0",
+    "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.10.0",
     "express": "^4.21.1",
     "jquery": "^3.7.1",
