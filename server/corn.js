@@ -28,3 +28,56 @@ export const buyCorn = db.transaction((clientId) => {
   }
   return insertPurchaseStmt.get(clientId, now);
 });
+
+const listPurchasesStmt = db.prepare(`
+  SELECT id, bought_at, shipped_at
+  FROM purchases
+  WHERE client_id = ?
+  ORDER BY bought_at DESC
+`);
+
+const inventoryStmt = db.prepare(`
+  SELECT
+    COUNT(*) AS purchased,
+    COALESCE(SUM(CASE WHEN shipped_at IS NOT NULL THEN 1 ELSE 0 END), 0) AS shipped
+  FROM purchases
+  WHERE client_id = ?
+`);
+
+const findClientByNameStmt = db.prepare(
+  'SELECT id FROM clients WHERE name = ?'
+);
+const findUnshippedStmt = db.prepare(`
+  SELECT id FROM purchases
+  WHERE client_id = ? AND shipped_at IS NULL
+  ORDER BY bought_at ASC
+  LIMIT ?
+`);
+const markShippedStmt = db.prepare(
+  'UPDATE purchases SET shipped_at = ? WHERE id = ?'
+);
+
+export function listPurchases(clientId) {
+  return listPurchasesStmt.all(clientId);
+}
+
+export function inventoryFor(clientId) {
+  const { purchased, shipped } = inventoryStmt.get(clientId);
+  return { purchased, shipped, pending: purchased - shipped };
+}
+
+export class UnknownClientError extends Error {
+  constructor(name) {
+    super(`Unknown client: ${name}`);
+    this.code = 'UNKNOWN_CLIENT';
+  }
+}
+
+export const markShipped = db.transaction((clientName, quantity) => {
+  const client = findClientByNameStmt.get(clientName);
+  if (!client) throw new UnknownClientError(clientName);
+  const rows = findUnshippedStmt.all(client.id, quantity);
+  const now = Date.now();
+  for (const row of rows) markShippedStmt.run(now, row.id);
+  return { client: clientName, requested: quantity, shipped: rows.length };
+});
