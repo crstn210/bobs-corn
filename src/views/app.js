@@ -10,7 +10,7 @@ const AppView = Backbone.View.extend({
   },
 
   initialize() {
-    this.listenTo(session, 'change', this.renderShell);
+    this.listenTo(session, 'change:token', this.renderShell);
     this.renderShell();
   },
 
