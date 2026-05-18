@@ -63,6 +63,7 @@ const BuyView = Backbone.View.extend({
   },
 
   startCooldown(seconds) {
+    if (this._interval) clearInterval(this._interval);
     this.cooldown = seconds;
     this.tick();
     this._interval = setInterval(() => this.tick(), 1000);
