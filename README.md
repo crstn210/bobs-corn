@@ -9,20 +9,89 @@ review their history, and see what's been shipped.
 
 ---
 
-## Quick start
+## Getting started
+
+### Prerequisites
+
+- **Node.js ≥ 20** (developed on 26, supported back to 20 because that's the
+  oldest version `better-sqlite3` ships prebuilt binaries for). Check with
+  `node --version`.
+- **npm** (ships with Node).
+- No global system dependencies — `better-sqlite3` is the only native dep
+  and it has prebuilt binaries for macOS/Linux/Windows on supported Node
+  versions, so `npm install` should not need a C++ toolchain.
+
+### Install
 
 ```bash
+git clone <repo-url> bobs-corn
+cd bobs-corn
 npm install
+```
+
+### Run (development)
+
+```bash
 npm run dev
 ```
 
-`npm run dev` runs the Express API and the Vite dev server in parallel:
+This starts two processes in parallel via `concurrently`:
 
-- API:    http://localhost:3101
-- Client: http://localhost:5173 (proxies `/api/*` to the API)
+- **API** — Express on http://localhost:3101 (auto-restarts on changes via
+  `node --watch`)
+- **Client** — Vite on http://localhost:5173 (HMR; proxies `/api/*` to the API)
 
-The SQLite file `data.db` is created on first boot in the project root, with
-three seeded clients ready to go.
+Open **http://localhost:5173** in your browser. Sign in with one of the
+[seeded credentials](#seeded-credentials) below.
+
+The SQLite file `data.db` is created on first boot in the project root and
+re-seeded idempotently — you can delete it any time to reset state (`rm
+data.db data.db-shm data.db-wal`).
+
+### Build (production)
+
+```bash
+npm run build      # builds the static client into dist/
+npm run preview    # serves dist/ locally to preview (the API still needs `node server/index.js`)
+```
+
+In production, the Express server would also serve `dist/` (or a CDN would),
+and the API would live behind a real hostname with TLS.
+
+### Available scripts
+
+| Script                | What it does                                                    |
+| --------------------- | --------------------------------------------------------------- |
+| `npm run dev`         | Run server + client together (the normal dev command)           |
+| `npm run dev:server`  | Run just the Express API (`node --watch server/index.js`)       |
+| `npm run dev:client`  | Run just Vite                                                   |
+| `npm run build`       | Build the client into `dist/`                                   |
+| `npm run preview`     | Serve the built `dist/` for a quick prod smoke check            |
+
+### Environment variables
+
+All optional — sensible defaults for local dev.
+
+| Variable       | Default            | Purpose                                                              |
+| -------------- | ------------------ | -------------------------------------------------------------------- |
+| `PORT`         | `3101`             | API port (the Vite proxy targets this; change both if you change it) |
+| `ADMIN_TOKEN`  | `dev-admin-token`  | Required in `X-Admin-Token` for `POST /api/ship`                     |
+| `DB_PATH`      | `./data.db`        | SQLite file location                                                 |
+
+### Troubleshooting
+
+- **`EADDRINUSE: address already in use :::3101`** — something else is on the
+  API port. Find it with `lsof -ti :3101` and kill, or run with a different
+  port: `PORT=3102 npm run dev` (also update `vite.config.js`'s proxy target
+  if you change it).
+- **`EADDRINUSE` on 5173** — same thing for Vite. Run `npx vite --port 5174`
+  manually, or kill the existing process.
+- **Reset all state** — `rm -f data.db data.db-shm data.db-wal && npm run dev`.
+  The seed re-runs on next boot.
+- **Native build error from `better-sqlite3`** — you're probably on a Node
+  version without a prebuilt binary. Either downgrade to Node 22/24 LTS, or
+  install Xcode Command Line Tools (`xcode-select --install` on macOS) so
+  node-gyp can compile from source.
 
 ### Seeded credentials
 
