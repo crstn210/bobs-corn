@@ -1,6 +1,9 @@
 import Backbone from 'backbone';
 import { api, RateLimitError } from '../api.js';
+import { session } from '../models/session.js';
 import { toast } from './toast.js';
+
+const RATE_LIMIT_MS = 60_000;
 
 const BuyView = Backbone.View.extend({
   className: 'text-center max-w-md mx-auto',
@@ -11,6 +14,10 @@ const BuyView = Backbone.View.extend({
 
   initialize() {
     this.cooldown = 0;
+    const nextBuyAt = session.get('next_buy_at');
+    if (nextBuyAt && nextBuyAt > Date.now()) {
+      this._initialCooldown = Math.ceil((nextBuyAt - Date.now()) / 1000);
+    }
   },
 
   render() {
@@ -26,6 +33,10 @@ const BuyView = Backbone.View.extend({
     `);
     this.$buy = this.$('.js-buy');
     this.$status = this.$('.js-status');
+    if (this._initialCooldown) {
+      this.startCooldown(this._initialCooldown);
+      this._initialCooldown = null;
+    }
     return this;
   },
 
@@ -33,6 +44,7 @@ const BuyView = Backbone.View.extend({
     this.$buy.prop('disabled', true);
     try {
       await api('POST', '/api/buy');
+      session.set('next_buy_at', Date.now() + RATE_LIMIT_MS);
       toast("Sold! That's one corn for you.", { variant: 'success' });
       this.startCooldown(60);
     } catch (err) {

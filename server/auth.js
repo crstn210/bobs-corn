@@ -26,7 +26,7 @@ export async function login(name, secret) {
   if (!ok) return null;
   const token = crypto.randomBytes(32).toString('hex');
   insertSession.run(token, client.id, Date.now());
-  return { token, name: client.name };
+  return { token, name: client.name, id: client.id };
 }
 
 export function logout(token) {

@@ -3,7 +3,7 @@ import { api, getToken, setToken, clearToken } from '../api.js';
 
 const Session = Backbone.Model.extend({
   defaults() {
-    return { token: getToken(), name: null };
+    return { token: getToken(), name: null, next_buy_at: null };
   },
 
   isLoggedIn() {
@@ -11,9 +11,9 @@ const Session = Backbone.Model.extend({
   },
 
   async login(name, secret) {
-    const { token, name: returnedName } = await api('POST', '/api/login', { name, secret });
+    const { token, name: returnedName, next_buy_at } = await api('POST', '/api/login', { name, secret });
     setToken(token);
-    this.set({ token, name: returnedName });
+    this.set({ token, name: returnedName, next_buy_at });
   },
 
   async logout() {
@@ -24,18 +24,18 @@ const Session = Backbone.Model.extend({
       // token may already be invalid; we still clear locally
     }
     clearToken();
-    this.set({ token: null, name: null });
+    this.set({ token: null, name: null, next_buy_at: null });
   },
 
   async refresh() {
     if (!this.isLoggedIn()) return;
     try {
-      const { name } = await api('GET', '/api/me');
-      this.set({ name });
+      const { name, next_buy_at } = await api('GET', '/api/me');
+      this.set({ name, next_buy_at });
     } catch (err) {
       if (err.status === 401) {
         clearToken();
-        this.set({ token: null, name: null });
+        this.set({ token: null, name: null, next_buy_at: null });
       } else {
         throw err;
       }

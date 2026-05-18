@@ -29,6 +29,13 @@ export const buyCorn = db.transaction((clientId) => {
   return insertPurchaseStmt.get(clientId, now);
 });
 
+export function getNextBuyAt(clientId) {
+  const last = lastPurchaseStmt.get(clientId);
+  if (!last) return null;
+  const next = last.bought_at + RATE_LIMIT_MS;
+  return next > Date.now() ? next : null;
+}
+
 const listPurchasesStmt = db.prepare(`
   SELECT id, bought_at, shipped_at
   FROM purchases

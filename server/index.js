@@ -6,6 +6,7 @@ import {
   listPurchases,
   inventoryFor,
   markShipped,
+  getNextBuyAt,
   RateLimitedError,
   UnknownClientError,
 } from './corn.js';
@@ -27,7 +28,8 @@ app.post('/api/login', async (req, res) => {
   }
   const result = await login(name, secret);
   if (!result) return res.status(401).json({ error: 'Invalid credentials' });
-  res.json(result);
+  const { id, ...rest } = result;
+  res.json({ ...rest, next_buy_at: getNextBuyAt(id) });
 });
 
 app.post('/api/logout', authMiddleware, (req, res) => {
@@ -36,7 +38,7 @@ app.post('/api/logout', authMiddleware, (req, res) => {
 });
 
 app.get('/api/me', authMiddleware, (req, res) => {
-  res.json({ name: req.client.name });
+  res.json({ name: req.client.name, next_buy_at: getNextBuyAt(req.client.id) });
 });
 
 app.post('/api/buy', authMiddleware, (req, res) => {
