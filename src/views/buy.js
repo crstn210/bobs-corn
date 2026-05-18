@@ -49,12 +49,16 @@ const BuyView = Backbone.View.extend({
       this.startCooldown(60);
     } catch (err) {
       if (err instanceof RateLimitError) {
-        toast('Hold on — Bob can only sell one corn per minute.', { variant: 'error' });
+        toast(
+          `Hold on — Bob can only sell one corn per minute. Next in ${err.retryAfterSeconds}s.`,
+          { variant: 'error' },
+        );
         this.startCooldown(err.retryAfterSeconds);
       } else {
         toast(err.message || 'Something went wrong', { variant: 'error' });
-        this.$buy.prop('disabled', false);
       }
+    } finally {
+      this.$buy.prop('disabled', false);
     }
   },
 
@@ -68,11 +72,9 @@ const BuyView = Backbone.View.extend({
     if (this.cooldown <= 0) {
       clearInterval(this._interval);
       this._interval = null;
-      this.$buy.prop('disabled', false);
       this.$status.text('');
       return;
     }
-    this.$buy.prop('disabled', true);
     this.$status.text(`Next corn available in ${this.cooldown}s`);
     this.cooldown -= 1;
   },
