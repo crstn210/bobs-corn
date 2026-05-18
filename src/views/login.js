@@ -10,8 +10,10 @@ const LoginView = Backbone.View.extend({
 
   render() {
     this.$el.html(`
-      <h1 class="text-2xl font-semibold mb-2">Sign in</h1>
-      <p class="text-sm text-stone-500 mb-6">Enter your name and secret to buy corn.</p>
+      <div class="text-center"><span class="text-7xl mb-4 select-none">🌽</span></div>
+      <h1 class="text-3xl font-bold mb-2 text-center">Bob's Corn</h1>
+      <h2 class="text-xl font-semibold mb-2 text-center">Sign in</h2>
+      <p class=" text-center text-sm text-stone-500 mb-6">Enter your name and secret to buy corn.</p>
       <form class="space-y-3" novalidate>
         <input
           name="name"
